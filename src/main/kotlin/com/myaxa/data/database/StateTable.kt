@@ -10,23 +10,23 @@ object StateTable: Table(name = "state") {
     private val lightingStartTime = StateTable.integer("lightingStartTime")
     private val lightingStopTime = StateTable.integer("lightingStopTime")
 
-    fun insert(stateDTO: StateDTO) {
+    fun insert(stateDBO: StateDBO) {
         transaction {
             StateTable.replace {
-                it[zeroId] = stateDTO.zeroId
-                it[lightingIsOn] = stateDTO.lightingIsOn
-                it[scheduleIsOn] = stateDTO.scheduleIsOn
-                it[lightingStartTime] = stateDTO.lightingStartTime
-                it[lightingStopTime] = stateDTO.lightingStopTime
+                it[zeroId] = stateDBO.zeroId
+                it[lightingIsOn] = stateDBO.lightingIsOn
+                it[scheduleIsOn] = stateDBO.scheduleIsOn
+                it[lightingStartTime] = stateDBO.lightingStartTime
+                it[lightingStopTime] = stateDBO.lightingStopTime
             }
         }
     }
 
-    fun fetch(): StateDTO {
+    fun fetch(): StateDBO {
         return transaction {
             val stateModel = StateTable.select { zeroId.eq(0) }
             val statesList = stateModel.map { query ->
-                StateDTO(
+                StateDBO(
                     zeroId = query[zeroId],
                     lightingIsOn = query[lightingIsOn],
                     scheduleIsOn = query[scheduleIsOn],
