@@ -1,13 +1,9 @@
 package com.myaxa.plugins
 
-import com.myaxa.data.database.StateDTO
 import com.myaxa.data.database.StateTable
-import org.jetbrains.exposed.sql.*
-import io.ktor.http.*
-import io.ktor.server.request.*
-import io.ktor.server.response.*
 import io.ktor.server.application.*
-import io.ktor.server.routing.*
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureDatabase() {
@@ -23,12 +19,5 @@ fun Application.configureDatabase() {
 
     transaction {
         SchemaUtils.create(StateTable)
-        StateTable.insert(StateDTO(
-            zeroId = 0,
-            lightingIsOn = false,
-            scheduleIsOn = true,
-            lightingStartTime = 1000,
-            lightingStopTime = 2200
-        ))
     }
 }
