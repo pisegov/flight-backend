@@ -4,7 +4,7 @@ import com.myaxa.features.state.configureStateRouting
 import com.myaxa.plugins.configureDatabase
 import com.myaxa.plugins.configureRouting
 import com.myaxa.plugins.configureSerialization
-import com.myaxa.utils.scheduleTasks
+import com.myaxa.utils.scheduleLightingSwitch
 import io.ktor.server.application.*
 import io.ktor.server.cio.*
 
@@ -15,5 +15,5 @@ fun Application.module() {
     configureRouting()
     configureDatabase()
     configureSerialization()
-    scheduleTasks()
+    scheduleLightingSwitch()
 }
