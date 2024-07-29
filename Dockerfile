@@ -1,4 +1,4 @@
-FROM openjdk:13
+FROM amazoncorretto:11-alpine
 
 RUN mkdir -p /app
 
