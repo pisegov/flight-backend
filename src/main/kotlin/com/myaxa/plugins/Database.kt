@@ -1,13 +1,14 @@
 package com.myaxa.plugins
 
 import com.myaxa.data.database.StateTable
+import com.myaxa.data.model.State
 import io.ktor.server.application.*
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
 fun Application.configureDatabase() {
-    val database = Database.connect(
+    Database.connect(
         url = environment.config
             .propertyOrNull("ktor.security.database.mysqlUrl")?.getString() ?: "",
         driver = "com.mysql.cj.jdbc.Driver",
@@ -19,5 +20,13 @@ fun Application.configureDatabase() {
 
     transaction {
         SchemaUtils.create(StateTable)
+        StateTable.insertIfNotExist(
+            State(
+                lightingIsOn = true,
+                scheduleIsOn = true,
+                lightingStartTime = 800,
+                lightingStopTime = 2200
+            )
+        )
     }
 }

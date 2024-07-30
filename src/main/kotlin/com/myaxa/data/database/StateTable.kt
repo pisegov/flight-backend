@@ -24,7 +24,14 @@ object StateTable : Table(name = "state") {
         }
     }
 
-    fun fetch(): StateDBO {
+    fun insertIfNotExist(state: State) {
+        transaction {
+            val fetched = StateTable.select { zeroId.eq(STATE_ID) }.singleOrNull()
+            if (fetched == null) insert(state)
+        }
+    }
+
+    fun fetch(): State {
         return transaction {
             val stateModel = StateTable.select { zeroId.eq(STATE_ID) }
             val statesList = stateModel.map { query ->
