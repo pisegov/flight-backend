@@ -1,10 +1,8 @@
-package com.myaxa.features.state
+package com.myaxa.features.state_routing
 
 import com.myaxa.data.database.StateTable
-import com.myaxa.data.model.StateDTO
-import io.ktor.client.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.request.*
+import com.myaxa.data.model.State
+import com.myaxa.data.network_client.NetworkClient
 import io.ktor.http.*
 import io.ktor.server.routing.*
 import io.ktor.server.response.*
@@ -12,15 +10,18 @@ import io.ktor.server.application.*
 import io.ktor.server.request.*
 import io.ktor.util.collections.*
 import kotlinx.coroutines.delay
+import org.koin.ktor.ext.inject
 import kotlin.time.Duration.Companion.seconds
 
 val receivers: MutableSet<ApplicationCall> = ConcurrentSet()
 
 fun Application.configureStateRouting() {
+
+    val networkClient by inject<NetworkClient>()
     routing {
         get("/state") {
             val stateFromDatabase = StateTable.fetch()
-            call.respond(stateFromDatabase.toStateDTO())
+            call.respond(stateFromDatabase)
         }
 
         get("/state/subscribe") {
@@ -32,15 +33,10 @@ fun Application.configureStateRouting() {
         }
 
         post("/state") {
+            val newState = call.receive<State>()
+            StateTable.insert(newState)
 
-            val newState = call.receive<StateDTO>()
-            StateTable.insert(newState.toStateDBO())
-
-            val client = HttpClient(CIO)
-            val microcontrollerUrl = this@routing.environment?.config
-                ?.propertyOrNull("ktor.security.microcontroller.url")?.getString() ?: ""
-            val lightingStates = mapOf(true to "on", false to "off")
-            client.get("$microcontrollerUrl${lightingStates[newState.lightingIsOn]}")
+            networkClient.sendSwitchRequest(newState)
 
             call.respond(newState)
 

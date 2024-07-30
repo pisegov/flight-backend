@@ -1,18 +1,16 @@
-package com.myaxa.utils
+package com.myaxa.features.lighting_scheduling
 
-import com.myaxa.data.database.StateDBO
 import com.myaxa.data.database.StateTable
-import io.ktor.client.*
-import io.ktor.client.request.*
+import com.myaxa.data.model.State
+import com.myaxa.data.network_client.NetworkClient
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import java.util.*
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 class TimerLightingSwitcher(
-    private val client: HttpClient,
+    private val client: NetworkClient,
     private val coroutineScope: CoroutineScope,
 ) {
     fun setLightingSchedule() {
@@ -21,14 +19,14 @@ class TimerLightingSwitcher(
             .distinctUntilChanged { old, new -> old.lightingIsOn == new.lightingIsOn }
             .onEach { state ->
                 StateTable.insert(state)
-                sendSwitchRequest(client = client, state = state)
+                client.sendSwitchRequest(state = state)
             }
             .launchIn(coroutineScope)
 
         timerFlow(10.minutes)
             .onEach {
                 val state = StateTable.fetch()
-                sendSwitchRequest(client, state)
+                client.sendSwitchRequest(state = state)
             }.launchIn(coroutineScope)
     }
 
@@ -40,7 +38,7 @@ class TimerLightingSwitcher(
         }
     }
 
-    private fun getNewLightingState(): StateDBO {
+    private fun getNewLightingState(): State {
         val state = StateTable.fetch()
         if (!state.scheduleIsOn) return state
 
@@ -55,12 +53,6 @@ class TimerLightingSwitcher(
 
             else -> state
         }
-    }
-
-    private suspend fun sendSwitchRequest(client: HttpClient, state: StateDBO) {
-        val lightingStates = mapOf(true to "on", false to "off")
-        val url = lightingStates[state.lightingIsOn] ?: return
-        client.get(url)
     }
 
     private fun getCurrentTime(): Int {
