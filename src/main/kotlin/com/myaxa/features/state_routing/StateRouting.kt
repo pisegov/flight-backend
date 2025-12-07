@@ -1,49 +1,44 @@
 package com.myaxa.features.state_routing
 
-import com.myaxa.data.database.StateTable
 import com.myaxa.data.model.State
-import com.myaxa.data.network_client.NetworkClient
-import io.ktor.http.*
-import io.ktor.server.routing.*
-import io.ktor.server.response.*
 import io.ktor.server.application.*
 import io.ktor.server.request.*
-import io.ktor.util.collections.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.coroutines.delay
+import org.koin.core.parameter.parametersOf
 import org.koin.ktor.ext.inject
 import kotlin.time.Duration.Companion.seconds
 
-val receivers: MutableSet<ApplicationCall> = ConcurrentSet()
-
 fun Application.configureStateRouting() {
 
-    val networkClient by inject<NetworkClient>()
+    val stateStore by inject<StateStore> { parametersOf(this) }
+    val callStore by inject<CallStore> { parametersOf(this) }
+
+    suspend fun ApplicationCall.sendTimeoutOnNoResponse() {
+        delay(5.seconds)
+        if (callStore.contains(this)) {
+            callStore.remove(this)
+            respond(stateStore.currentState.value)
+        }
+    }
+
     routing {
         get("/state") {
-            val stateFromDatabase = StateTable.fetch()
-            call.respond(stateFromDatabase)
+            val currentState = stateStore.currentState.value
+            call.respond(currentState)
         }
 
         get("/state/subscribe") {
-            receivers.add(call)
-            delay(5L.seconds)
-            receivers.remove(call)
-
-            call.respond(HttpStatusCode.RequestTimeout)
+            callStore.add(call)
+            call.sendTimeoutOnNoResponse()
         }
 
         post("/state") {
             val newState = call.receive<State>()
-            StateTable.insert(newState)
-
-            networkClient.sendSwitchRequest(newState)
-
-            call.respond(newState)
-
-            receivers.forEach { receiver ->
-                receiver.respond(newState)
-            }
-            receivers.clear()
+            callStore.add(call)
+            stateStore.updateState(newState)
+            call.sendTimeoutOnNoResponse()
         }
     }
 }

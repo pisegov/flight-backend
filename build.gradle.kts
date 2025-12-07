@@ -4,6 +4,7 @@ val logback_version: String by project
 val exposed_version: String by project
 val h2_version: String by project
 val koin_version: String by project
+val sqlight_jdbc_version: String by project
 
 plugins {
     kotlin("jvm") version "1.8.21"
@@ -43,7 +44,5 @@ dependencies {
     implementation("io.insert-koin:koin-ktor:$koin_version")
     implementation("io.insert-koin:koin-logger-slf4j:$koin_version")
 
-    implementation("org.mariadb.jdbc:mariadb-java-client:3.1.3")
-    implementation("com.mysql:mysql-connector-j:8.0.32")
-
+    implementation("org.xerial:sqlite-jdbc:$sqlight_jdbc_version")
 }

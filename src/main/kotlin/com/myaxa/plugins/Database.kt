@@ -7,16 +7,14 @@ import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 
+private object EnvVars {
+    const val FLIGHT_DATABASE_RELATIVE_PATH = "FLIGHT_DATABASE_RELATIVE_PATH"
+}
+
 fun Application.configureDatabase() {
-    Database.connect(
-        url = environment.config
-            .propertyOrNull("ktor.security.database.mysqlUrl")?.getString() ?: "",
-        driver = "com.mysql.cj.jdbc.Driver",
-        user = environment.config
-            .propertyOrNull("ktor.security.database.mysqlUser")?.getString() ?: "",
-        password = environment.config
-            .propertyOrNull("ktor.security.database.mysqlPassword")?.getString() ?: ""
-    )
+    val databasePath = System.getenv(EnvVars.FLIGHT_DATABASE_RELATIVE_PATH)
+        ?: error("There is no database path in FLIGHT_DATABASE_RELATIVE_PATH")
+    Database.connect("jdbc:sqlite:$databasePath", driver = "org.sqlite.JDBC")
 
     transaction {
         SchemaUtils.create(StateTable)
